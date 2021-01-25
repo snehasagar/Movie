@@ -1,16 +1,20 @@
 package com.movies
 
+import android.app.Activity
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.movies.network.Loading
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.launch
+import org.jetbrains.anko.inputMethodManager
 import org.jetbrains.anko.sdk27.coroutines.onClick
 import org.jetbrains.anko.startActivity
 import retrofit2.await
@@ -28,8 +32,10 @@ class MainActivity : AppCompatActivity() {
 
         recycleView.visibility = View.GONE
         button.onClick {
+           // inputMethodManager.hideSoftInputFromWindow(Context.windowToken, 0)
+            val imm = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager?
+            imm?.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0)
             var title = editText2.text.toString()
-            recycleView.visibility = View.VISIBLE
 
             Loading.showLoading(this@MainActivity)
                 launch {
@@ -37,7 +43,7 @@ class MainActivity : AppCompatActivity() {
                         val data = movieViewModel.getMovieListFromAPI(title).await()
                         Log.d("Response--->",data.toString())
                         if(data!=null && data.Response=="True"){
-
+                            recycleView.visibility = View.VISIBLE
                             movieViewModel.getTnCList(data.Search!!).observe(this@MainActivity,
                                 Observer {
                                     val layoutM = LinearLayoutManager(this@MainActivity)
@@ -53,6 +59,10 @@ class MainActivity : AppCompatActivity() {
                                     movieListAdapter.notifyDataSetChanged()
                                 })
                             Loading.hideLoading()
+                        }else{
+                            Toast.makeText(this@MainActivity,"Movie Not found",Toast.LENGTH_LONG).show()
+                            Loading.hideLoading()
+                            recycleView.visibility = View.GONE
                         }
 
                     } catch(e: Exception) {
